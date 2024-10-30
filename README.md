@@ -1,5 +1,5 @@
 # Membres du groupe:
-- *Benjamin FERRANDEZ*
+- *Benjamin FERRANDEZ* (Directeur Général)
 - *Loïc CANO*
 - *Dylan ARLIN*
 
