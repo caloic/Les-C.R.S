@@ -31,6 +31,7 @@ function handleGet($pdo) {
     echo json_encode($result);
 }
 
+
 function handlePost($pdo, $input) {
     $sql = "INSERT INTO api_requests (name, email, age, gender) VALUES (:name, :email, :age, :gender)";
     $stmt = $pdo->prepare($sql);
