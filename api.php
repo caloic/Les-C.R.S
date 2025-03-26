@@ -1,80 +1,108 @@
 <?php
-header("Content-Type: application/json");
-include 'db.php';
+/**
+ * API simple pour les requêtes AJAX
+ */
 
-$method = $_SERVER['REQUEST_METHOD'];
-$input = json_decode(file_get_contents('php://input'), true);
+// Inclure les fonctions
+require_once 'functions.php';
 
-switch ($method) {
-    case 'GET':
-        handleGet($pdo);
+// Configuration des en-têtes CORS et JSON
+header('Content-Type: application/json');
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST');
+
+// Traiter la requête
+$action = isset($_GET['action']) ? $_GET['action'] : '';
+$response = ['success' => false, 'message' => 'Action non reconnue'];
+
+switch ($action) {
+    // Récupérer les données météo pour une localisation
+    case 'getWeather':
+        $location = isset($_GET['location']) ? $_GET['location'] : '';
+
+        if (empty($location)) {
+            $response = ['success' => false, 'message' => 'Localisation non spécifiée'];
+        } else {
+            $weatherData = getWeatherData($location);
+
+            if (isset($weatherData['error'])) {
+                $response = ['success' => false, 'message' => $weatherData['error']];
+            } else {
+                $response = ['success' => true, 'data' => $weatherData];
+            }
+        }
         break;
-    case 'POST':
-        handlePost($pdo, $input);
+
+    // Récupérer toutes les localisations
+    case 'getLocations':
+        $locations = getAllLocations();
+        $response = ['success' => true, 'data' => $locations];
         break;
-    case 'PUT':
-        handlePut($pdo, $input);
+
+    // Récupérer les données météo pour un ID de localisation
+    case 'getWeatherById':
+        $locationId = isset($_GET['id']) ? $_GET['id'] : '';
+
+        if (empty($locationId)) {
+            $response = ['success' => false, 'message' => 'ID de localisation non spécifié'];
+        } else {
+            $weatherData = getWeatherForLocation($locationId);
+
+            if (!$weatherData) {
+                $response = ['success' => false, 'message' => 'Données météo non trouvées'];
+            } else {
+                // Récupérer également la prédiction
+                $prediction = getPredictionForLocation($locationId);
+
+                $response = [
+                    'success' => true,
+                    'data' => [
+                        'weather' => $weatherData,
+                        'prediction' => $prediction
+                    ]
+                ];
+            }
+        }
         break;
-    case 'DELETE':
-        handleDelete($pdo, $input);
+
+    // Récupérer les prévisions complètes pour une localisation
+    case 'getForecast':
+        $location = isset($_GET['location']) ? $_GET['location'] : '';
+
+        if (empty($location)) {
+            $response = ['success' => false, 'message' => 'Localisation non spécifiée'];
+        } else {
+            $weatherData = getWeatherData($location);
+
+            if (isset($weatherData['error'])) {
+                $response = ['success' => false, 'message' => $weatherData['error']];
+            } else {
+                $response = [
+                    'success' => true,
+                    'data' => [
+                        'location' => $weatherData['location'],
+                        'current' => $weatherData['current'],
+                        'forecast' => $weatherData['forecast']
+                    ]
+                ];
+            }
+        }
         break;
+
+    // Action par défaut: retourner une erreur
     default:
-        echo json_encode(['message' => 'Invalid request method']);
+        $response = [
+            'success' => false,
+            'message' => 'Action non valide',
+            'valid_actions' => [
+                'getWeather' => 'Récupérer les données météo pour une localisation (paramètre: location)',
+                'getLocations' => 'Récupérer toutes les localisations enregistrées',
+                'getWeatherById' => 'Récupérer les données météo pour un ID de localisation (paramètre: id)',
+                'getForecast' => 'Récupérer les prévisions complètes pour une localisation (paramètre: location)'
+            ]
+        ];
         break;
 }
 
-function handleGet($pdo) {
-    $sql = "SELECT * FROM users";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
-    $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    echo json_encode($result);
-}
-
-
-function handlePost($pdo, $input) {
-    $sql = "INSERT INTO api_requests (name, email, age, gender) VALUES (:name, :email, :age, :gender)";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute(['name' => $input['name'], 'email' => $input['email'], 'age' => $input['age'], 'gender' => $input['gender']]);
-    echo json_encode(['message' => 'User created successfully']);
-}
-
-function handlePut($pdo, $input) {
-    $fields = [];
-    $params = ['id' => $input['id']];
-
-    if (isset($input['name'])) {
-        $fields[] = "name = :name";
-        $params['name'] = $input['name'];
-    }
-    if (isset($input['email'])) {
-        $fields[] = "email = :email";
-        $params['email'] = $input['email'];
-    }
-    if (isset($input['password'])) {
-        $fields[] = "password = :password";
-        $params['password'] = $input['password'];
-    }
-    if (isset($input['adress'])) {
-        $fields[] = "adress = :adress";
-        $params['adress'] = $input['adress'];
-    }
-
-    if (empty($fields)) {
-        echo json_encode(['message' => 'No fields to update']);
-        return;
-    }
-
-    $sql = "UPDATE users SET " . implode(', ', $fields) . " WHERE id = :id";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    echo json_encode(['message' => 'User updated sucessfully']);
-}
-
-function handleDelete($pdo, $input) {
-    $sql = "DELETE FROM users WHERE id = :id";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute(['id' => $input['id']]);
-    echo json_encode(['message' => 'User deleted successfully']);
-}
-?>
+// Envoyer la réponse JSON
+echo json_encode($response);
