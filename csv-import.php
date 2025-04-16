@@ -8,8 +8,8 @@
 require_once 'config.php';
 
 // Configuration
-$csvFile = 'meteo-0025.csv';
-$batchSize = 500; // Nombre de lignes à traiter par lot
+$csvFile = 'meteo-0025_clean.csv';
+$batchSize = 5000; // Nombre de lignes à traiter par lot
 $maxRows = 0;  // 0 = importer toutes les lignes
 $startTime = microtime(true);
 
@@ -468,7 +468,7 @@ function importCSV($filepath, $batchSize, $maxRows) {
             </ul>
         </div>
     </div>
-</nav>
+</nav> 
 
 <div class="container">
     <div class="import-card">

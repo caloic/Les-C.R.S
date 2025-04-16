@@ -3,7 +3,7 @@ import numpy as np
 import os
 import sys
 
-def clean_meteo_csv(input_file, output_file=None):
+def clean_meteo_csv(input_file, output_file=None, missing_threshold=0.0, conversion_threshold=0.1):
     """
     Nettoie un fichier CSV de données météorologiques en supprimant les lignes incomplètes
     et en vérifiant la validité des données numériques.
@@ -11,7 +11,9 @@ def clean_meteo_csv(input_file, output_file=None):
     Args:
         input_file (str): Chemin vers le fichier CSV d'entrée
         output_file (str, optional): Chemin pour le fichier CSV de sortie. Si non spécifié,
-                                    utilisera le nom du fichier d'entrée avec '_clean' ajouté.
+                                      utilisera le nom du fichier d'entrée avec '_clean' ajouté.
+        missing_threshold (float, optional): Seuil de valeurs manquantes pour suppression de ligne (par défaut 0%).
+        conversion_threshold (float, optional): Seuil pour la proportion de données non numériques tolérées dans les colonnes numériques (par défaut 10%).
 
     Returns:
         tuple: (DataFrame nettoyé, statistiques de nettoyage)
@@ -58,6 +60,7 @@ def clean_meteo_csv(input_file, output_file=None):
 
         # Stats pour les erreurs de conversion
         conversion_errors = 0
+        conversion_rows = []
 
         for col in numeric_columns:
             if col in df.columns:
@@ -68,7 +71,17 @@ def clean_meteo_csv(input_file, output_file=None):
                 # Convertir en numérique, remplacer les erreurs par NaN
                 df[col] = pd.to_numeric(df[col], errors='coerce')
 
+                # Vérifier la proportion de valeurs invalides dans la colonne
+                invalid_percentage = (df[col].isna().sum() / len(df)) * 100
+                if invalid_percentage > conversion_threshold * 100:
+                    conversion_rows.append(f"{col}: {invalid_percentage:.2f}% de valeurs invalides")
+                    df = df.dropna(subset=[col])  # Supprimer les lignes où cette colonne a des valeurs invalides
+
         print(f"Erreurs de conversion numérique: {conversion_errors}")
+        if conversion_rows:
+            print("Colonnes avec trop de valeurs invalides:")
+            for row in conversion_rows:
+                print(row)
 
         # 4. Vérifier que les coordonnées GPS sont valides
         # Extraire latitude et longitude de la colonne Position
@@ -104,14 +117,12 @@ def clean_meteo_csv(input_file, output_file=None):
                 print(f"Lignes avec coordonnées GPS invalides: {invalid_coords_count}")
                 df = df[~invalid_coords]
 
-        # 5. Supprimer les lignes avec trop de valeurs manquantes
-        # On définit un seuil de 50% de valeurs manquantes par ligne
-        threshold = 0.5
+        # 5. Supprimer les lignes avec **n'importe quelle valeur manquante**
         rows_before = len(df)
-        df = df.dropna(thresh=int(df.shape[1] * threshold))
+        df = df.dropna()  # Supprime toutes les lignes où il y a une seule valeur manquante
         rows_after = len(df)
         too_many_missing = rows_before - rows_after
-        print(f"Lignes supprimées pour trop de valeurs manquantes: {too_many_missing}")
+        print(f"Lignes supprimées pour valeurs manquantes: {too_many_missing}")
 
         # 6. Enregistrer le DataFrame nettoyé
         df.to_csv(output_file, sep=';', index=False)
@@ -143,13 +154,15 @@ def clean_meteo_csv(input_file, output_file=None):
 def main():
     """Fonction principale pour exécuter le script depuis la ligne de commande"""
     if len(sys.argv) < 2:
-        print("Usage: python clean_meteo_csv.py input_file.csv [output_file.csv]")
+        print("Usage: python clean_meteo_csv.py input_file.csv [output_file.csv] [missing_threshold] [conversion_threshold]")
         sys.exit(1)
 
     input_file = sys.argv[1]
     output_file = sys.argv[2] if len(sys.argv) > 2 else None
+    missing_threshold = float(sys.argv[3]) if len(sys.argv) > 3 else 0.0  # Suppression stricte des lignes avec une valeur manquante
+    conversion_threshold = float(sys.argv[4]) if len(sys.argv) > 4 else 0.1  # Seuil plus strict pour les erreurs de conversion
 
-    clean_meteo_csv(input_file, output_file)
+    clean_meteo_csv(input_file, output_file, missing_threshold, conversion_threshold)
 
 if __name__ == "__main__":
     main()

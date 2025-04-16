@@ -8,7 +8,7 @@ $db_config = [
     'host' => 'localhost',
     'dbname' => 'les_crs',
     'user' => 'root',
-    'password' => 'root'
+    'password' => ''
 ];
 
 // Connexion à la base de données
