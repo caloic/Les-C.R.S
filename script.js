@@ -1,6 +1,6 @@
 /**
- * Script pour le site météo version Figma
- * Version complète avec toutes les fonctionnalités
+ * Script pour le site météo - Version mise à jour
+ * Gère l'affichage des prévisions et données IA
  */
 
 // Attendre que le DOM soit chargé
@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const locationInput = document.getElementById('locationInput');
     const searchBtn = document.getElementById('searchBtn');
     const currentLocation = document.getElementById('currentLocation');
+    const currentDate = document.getElementById('currentDate');
     const temperature = document.getElementById('temperature');
     const weatherCondition = document.getElementById('weatherCondition');
     const humidity = document.getElementById('humidity');
@@ -95,6 +96,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Mettre à jour les informations de localisation
         currentLocation.textContent = `Météo ${data.location.name}`;
 
+        // Format de la date actuelle
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        currentDate.textContent = now.toLocaleDateString('fr-FR', options);
+
         // Mettre à jour les données météo actuelles
         temperature.textContent = `${data.current.temp_c}`;
         weatherCondition.textContent = `${data.current.condition.text}`;
@@ -113,8 +119,14 @@ document.addEventListener('DOMContentLoaded', function() {
             updateForecast(data.forecast.forecastday);
         }
 
-        // Simuler une mise à jour des prédictions IA
-        updatePredictions(data.current.temp_c, data.current.humidity);
+        // Mettre à jour les prédictions IA
+        if (data.prediction) {
+            aiTemperature.textContent = `${data.prediction.temperature}°C`;
+            aiHumidity.textContent = `${data.prediction.humidity}%`;
+        } else {
+            // Simuler une prédiction si non disponible
+            updatePredictions(data.current.temp_c, data.current.humidity);
+        }
     }
 
     /**

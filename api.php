@@ -1,7 +1,4 @@
 <?php
-/**
- * API simple pour les requêtes AJAX
- */
 
 // Inclure les fonctions
 require_once 'functions.php';
@@ -16,14 +13,15 @@ $action = isset($_GET['action']) ? $_GET['action'] : '';
 $response = ['success' => false, 'message' => 'Action non reconnue'];
 
 switch ($action) {
-    // Récupérer les données météo pour une localisation
+    // Récupérer les données météo pour une localisation (recherche locale)
     case 'getWeather':
         $location = isset($_GET['location']) ? $_GET['location'] : '';
 
         if (empty($location)) {
             $response = ['success' => false, 'message' => 'Localisation non spécifiée'];
         } else {
-            $weatherData = getWeatherData($location);
+            // Utiliser la fonction qui ne recherche que dans la base de données
+            $weatherData = getLocalWeatherData($location);
 
             if (isset($weatherData['error'])) {
                 $response = ['success' => false, 'message' => $weatherData['error']];
@@ -72,7 +70,8 @@ switch ($action) {
         if (empty($location)) {
             $response = ['success' => false, 'message' => 'Localisation non spécifiée'];
         } else {
-            $weatherData = getWeatherData($location);
+            // Utiliser la fonction qui ne recherche que dans la base de données
+            $weatherData = getLocalWeatherData($location);
 
             if (isset($weatherData['error'])) {
                 $response = ['success' => false, 'message' => $weatherData['error']];

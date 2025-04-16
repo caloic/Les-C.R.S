@@ -1,8 +1,4 @@
 <?php
-/**
- * Page principale du site météo
- * Version exacte suivant la maquette Figma
- */
 
 // Inclure les fonctions
 require_once 'functions.php';
@@ -31,6 +27,51 @@ $weatherData = getWeatherData($defaultCity);
 
     <!-- Notre CSS -->
     <link rel="stylesheet" href="style.css">
+
+    <!-- Styles spécifiques pour l'autocomplétion et les nouvelles fonctionnalités -->
+    <style>
+        /* Style pour l'autocomplétion */
+        .autocomplete-container {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: #2c4158;
+            border-radius: 0 0 5px 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+        }
+
+        .autocomplete-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            color: white;
+        }
+
+        .autocomplete-item:hover {
+            background-color: #3d5974;
+        }
+
+        /* Style pour la section des statistiques */
+        .stat-item {
+            margin: 0.8rem 0;
+            font-size: 1rem;
+        }
+
+        /* Badge pour mode hors ligne */
+        .offline-badge {
+            background-color: #E67E22;
+            color: white;
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-left: 0.5rem;
+        }
+    </style>
 </head>
 <body>
 <!-- Header exactement comme sur la maquette Figma -->
@@ -58,6 +99,9 @@ $weatherData = getWeatherData($defaultCity);
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#map-section">Carte</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#history-section">Historique</a>
                 </li>
             </ul>
         </div>
@@ -131,6 +175,12 @@ $weatherData = getWeatherData($defaultCity);
                         </span>
                 </div>
             </div>
+
+            <?php if (isset($weatherData['note']) && $weatherData['note'] == 'Données basées sur l\'historique (mode hors ligne)'): ?>
+                <div class="mt-2">
+                    <span class="offline-badge">Mode hors ligne</span>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
@@ -182,6 +232,48 @@ $weatherData = getWeatherData($defaultCity);
         <div class="card-body">
             <div id="map" style="height: 400px;"></div>
         </div>
+    </div>
+</div>
+
+<!-- Section des statistiques historiques -->
+<div id="history-section" class="container">
+    <div id="historicalStats">
+        <?php if (isset($weatherData['historical_stats'])): ?>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Statistiques historiques</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="stat-item">
+                                <strong>Température moyenne:</strong> <?php echo $weatherData['historical_stats']['avg_temp']; ?>°C
+                            </div>
+                            <div class="stat-item">
+                                <strong>Pluviométrie moyenne:</strong> <?php echo $weatherData['historical_stats']['avg_rain']; ?> mm
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-item">
+                                <strong>Probabilité de pluie:</strong> <?php echo $weatherData['historical_stats']['rain_chance']; ?>%
+                            </div>
+                            <div class="stat-item">
+                                <strong>Jours extrêmes (température):</strong> <?php echo $weatherData['historical_stats']['extreme_temp_days']; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <?php else: ?>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Statistiques historiques</h5>
+                </div>
+                <div class="card-body">
+                    <p>Aucune statistique historique disponible pour cette localisation.</p>
+                </div>
+            </div>
+        <?php endif; ?>
     </div>
 </div>
 
