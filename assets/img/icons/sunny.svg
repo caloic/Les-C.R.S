@@ -1,0 +1,13 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sunGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffcc08" />
+      <stop offset="100%" stop-color="#ffaa00" />
+    </linearGradient>
+  </defs>
+  <circle cx="60" cy="60" r="40" fill="url(#sunGradient)" />
+  <!-- Sun rays -->
+  <path d="M60,0 L60,20 M60,100 L60,120 M0,60 L20,60 M100,60 L120,60 
+           M17,17 L31,31 M89,89 L103,103 M17,103 L31,89 M89,31 L103,17" 
+        stroke="#ffaa00" stroke-width="8" stroke-linecap="round" />
+</svg>

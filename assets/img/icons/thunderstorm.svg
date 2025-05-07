@@ -1,0 +1,39 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#90a4ae" />
+      <stop offset="100%" stop-color="#78909c" />
+    </linearGradient>
+    <linearGradient id="rainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#90caf9" />
+      <stop offset="100%" stop-color="#64b5f6" />
+    </linearGradient>
+    <linearGradient id="lightningGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffee58" />
+      <stop offset="100%" stop-color="#ffca28" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Cloud -->
+  <path d="M30,50 
+           C20,50 15,43 15,35 
+           C15,25 25,15 40,15 
+           C55,15 70,25 70,40 
+           C70,45 67,50 60,55 
+           C55,58 45,60 40,60 
+           C32,60 28,55 22,55
+           C15,55 10,60 10,50
+           C10,45 20,50 30,50 Z" 
+        fill="url(#cloudGradient)" 
+        filter="drop-shadow(0px 3px 3px rgba(0,0,0,0.12))" />
+  
+  <!-- Rain drops -->
+  <path d="M25,65 L20,80 M65,65 L60,80"
+        stroke="url(#rainGradient)" stroke-width="3" stroke-linecap="round" />
+  
+  <!-- Lightning bolts -->
+  <path d="M40,50 L35,70 L45,73 L35,100" 
+        stroke="url(#lightningGradient)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+  <path d="M55,55 L50,75" 
+        stroke="url(#lightningGradient)" stroke-width="3" stroke-linecap="round" />
+</svg>

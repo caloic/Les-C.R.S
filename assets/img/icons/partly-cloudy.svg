@@ -1,0 +1,28 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sunGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffcc08" />
+      <stop offset="100%" stop-color="#ffaa00" />
+    </linearGradient>
+    <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#f0f0f0" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Sun -->
+  <circle cx="50" cy="45" r="25" fill="url(#sunGradient)" />
+  
+  <!-- Cloud -->
+  <path d="M40,80 
+           C30,80 25,73 25,65 
+           C25,55 35,45 50,45 
+           C65,45 80,55 80,70 
+           C80,75 77,80 70,85 
+           C65,88 55,90 50,90 
+           C42,90 38,85 32,85
+           C25,85 20,90 20,80
+           C20,75 30,80 40,80 Z" 
+        fill="url(#cloudGradient)" 
+        filter="drop-shadow(0px 5px 3px rgba(0,0,0,0.1))" />
+</svg>

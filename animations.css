@@ -1,0 +1,450 @@
+
+/* Conteneur principal de l'animation soleil */
+.sun-animation-container {
+    position: absolute;
+    top: 10%;
+    right: 15%;
+    width: 300px;
+    height: 300px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Cercle central du soleil */
+.sun-core {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    background: radial-gradient(circle, #ffffa1 0%, #ffdd00 50%, #ffaa00 100%);
+    border-radius: 50%;
+    box-shadow:
+            0 0 40px rgba(255, 221, 0, 0.6),
+            0 0 80px rgba(255, 170, 0, 0.4);
+    animation: sun-core-pulse 4s infinite ease-in-out;
+}
+
+/* Rayonnement interne autour du soleil */
+.sun-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(255, 221, 0, 0.8) 0%, rgba(255, 170, 0, 0.1) 70%, rgba(255, 170, 0, 0) 100%);
+    border-radius: 50%;
+    animation: sun-glow-pulse 4s infinite ease-in-out alternate;
+}
+
+/* Grand rayonnement externe */
+.sun-rays-outer {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 250px;
+    height: 250px;
+    opacity: 0.5;
+    animation: sun-rays-rotate 40s linear infinite;
+}
+
+/* Rayons principaux */
+.sun-ray {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0 0;
+    width: 200px;
+    height: 6px;
+    background: linear-gradient(to right, rgba(255, 221, 0, 0.8) 0%, rgba(255, 170, 0, 0) 100%);
+    border-radius: 6px;
+}
+
+/* Position des rayons principaux */
+.sun-ray:nth-child(1) { transform: rotate(0deg) translateY(-50%); }
+.sun-ray:nth-child(2) { transform: rotate(30deg) translateY(-50%); }
+.sun-ray:nth-child(3) { transform: rotate(60deg) translateY(-50%); }
+.sun-ray:nth-child(4) { transform: rotate(90deg) translateY(-50%); }
+.sun-ray:nth-child(5) { transform: rotate(120deg) translateY(-50%); }
+.sun-ray:nth-child(6) { transform: rotate(150deg) translateY(-50%); }
+.sun-ray:nth-child(7) { transform: rotate(180deg) translateY(-50%); }
+.sun-ray:nth-child(8) { transform: rotate(210deg) translateY(-50%); }
+.sun-ray:nth-child(9) { transform: rotate(240deg) translateY(-50%); }
+.sun-ray:nth-child(10) { transform: rotate(270deg) translateY(-50%); }
+.sun-ray:nth-child(11) { transform: rotate(300deg) translateY(-50%); }
+.sun-ray:nth-child(12) { transform: rotate(330deg) translateY(-50%); }
+
+/* Rayons dynamiques (plus courts, animation différente) */
+.sun-ray-dynamic {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0 0;
+    width: 60px;
+    height: 4px;
+    background: linear-gradient(to right, rgba(255, 221, 0, 0.9) 0%, rgba(255, 221, 0, 0) 100%);
+    border-radius: 4px;
+    animation: sun-ray-pulse 2s infinite ease-in-out alternate;
+}
+
+/* Position des rayons dynamiques (entre les rayons principaux) */
+.sun-ray-dynamic:nth-child(1) { transform: rotate(15deg) translateY(-50%); animation-delay: 0s; }
+.sun-ray-dynamic:nth-child(2) { transform: rotate(45deg) translateY(-50%); animation-delay: 0.2s; }
+.sun-ray-dynamic:nth-child(3) { transform: rotate(75deg) translateY(-50%); animation-delay: 0.4s; }
+.sun-ray-dynamic:nth-child(4) { transform: rotate(105deg) translateY(-50%); animation-delay: 0.6s; }
+.sun-ray-dynamic:nth-child(5) { transform: rotate(135deg) translateY(-50%); animation-delay: 0.8s; }
+.sun-ray-dynamic:nth-child(6) { transform: rotate(165deg) translateY(-50%); animation-delay: 1.0s; }
+.sun-ray-dynamic:nth-child(7) { transform: rotate(195deg) translateY(-50%); animation-delay: 1.2s; }
+.sun-ray-dynamic:nth-child(8) { transform: rotate(225deg) translateY(-50%); animation-delay: 1.4s; }
+.sun-ray-dynamic:nth-child(9) { transform: rotate(255deg) translateY(-50%); animation-delay: 1.6s; }
+.sun-ray-dynamic:nth-child(10) { transform: rotate(285deg) translateY(-50%); animation-delay: 1.8s; }
+.sun-ray-dynamic:nth-child(11) { transform: rotate(315deg) translateY(-50%); animation-delay: 2.0s; }
+.sun-ray-dynamic:nth-child(12) { transform: rotate(345deg) translateY(-50%); animation-delay: 2.2s; }
+
+/* Points lumineux aléatoires */
+.sun-sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    animation: sun-sparkle-fade 3s infinite ease-out;
+}
+
+/* Animations du soleil */
+@keyframes sun-core-pulse {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        box-shadow:
+                0 0 40px rgba(255, 221, 0, 0.6),
+                0 0 80px rgba(255, 170, 0, 0.4);
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(1.05);
+        box-shadow:
+                0 0 60px rgba(255, 221, 0, 0.7),
+                0 0 100px rgba(255, 170, 0, 0.5);
+    }
+}
+
+@keyframes sun-glow-pulse {
+    0% {
+        width: 150px;
+        height: 150px;
+        opacity: 0.5;
+    }
+    100% {
+        width: 200px;
+        height: 200px;
+        opacity: 0.3;
+    }
+}
+
+@keyframes sun-rays-rotate {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes sun-ray-pulse {
+    0% { width: 60px; opacity: 0.5; }
+    100% { width: 100px; opacity: 0.8; }
+}
+
+@keyframes sun-sparkle-fade {
+    0%, 100% { opacity: 0; transform: scale(0); }
+    50% { opacity: 1; transform: scale(1.5); }
+}
+
+/* ------------- ANIMATION PLUIE ------------- */
+.rain-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.rain-drop {
+    position: absolute;
+    width: 2px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.6));
+    height: 20px;
+    top: -20px;
+    animation: rain-fall linear infinite;
+}
+
+@keyframes rain-fall {
+    0% {
+        transform: translateY(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(120vh);
+        opacity: 0;
+    }
+}
+
+/* ------------- ANIMATION NEIGE ------------- */
+.snow-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.snowflake {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0.8;
+    top: -10px;
+    animation: snow-fall linear infinite;
+}
+
+@keyframes snow-fall {
+    0% {
+        transform: translateY(0) translateX(0) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    50% {
+        transform: translateY(50vh) translateX(20px) rotate(180deg);
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(100vh) translateX(0) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+/* ------------- ANIMATION NUAGES ------------- */
+.cloud-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.cloud {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50px;
+    height: 40px;
+    animation: cloud-move linear infinite;
+}
+
+.cloud::before,
+.cloud::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+}
+
+.cloud::before {
+    width: 50px;
+    height: 50px;
+    left: 15px;
+    top: -20px;
+}
+
+.cloud::after {
+    width: 70px;
+    height: 70px;
+    left: 40px;
+    top: -30px;
+}
+
+@keyframes cloud-move {
+    0% {
+        transform: translateX(-150px);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateX(calc(100vw + 150px));
+        opacity: 0;
+    }
+}
+
+/* ------------- ANIMATION ORAGE ------------- */
+.lightning-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.lightning {
+    position: absolute;
+    opacity: 0;
+    width: 250px;
+    height: 300px;
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.8) 0%, rgba(200, 200, 255, 0) 70%);
+    animation: lightning-flash 8s infinite;
+}
+
+@keyframes lightning-flash {
+    0%, 95%, 98% {
+        opacity: 0;
+    }
+    96%, 97% {
+        opacity: 1;
+    }
+}
+
+/* Animation de l'éclair zigzag */
+.lightning-bolt {
+    position: absolute;
+    width: 4px;
+    height: 0;
+    background-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(200, 220, 255, 0.6);
+    animation: lightning-grow 8s infinite;
+    z-index: 2;
+    transform-origin: top center;
+}
+
+@keyframes lightning-grow {
+    0%, 95.9%, 100% {
+        height: 0;
+        opacity: 0;
+    }
+    96% {
+        height: 100px;
+        opacity: 1;
+        transform: translateY(0) rotate(0deg);
+    }
+    96.5% {
+        transform: translateY(80px) rotate(20deg);
+    }
+    97% {
+        height: 200px;
+        transform: translateY(160px) rotate(-15deg);
+    }
+    97.5% {
+        opacity: 1;
+    }
+    98% {
+        height: 300px;
+        opacity: 0;
+        transform: translateY(300px) rotate(5deg);
+    }
+}
+
+/* ------------- ANIMATION BROUILLARD ------------- */
+.fog-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.fog-layer {
+    position: absolute;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1), transparent);
+    opacity: 0.6;
+    animation: fog-move linear infinite;
+}
+
+@keyframes fog-move {
+    0% {
+        transform: translateX(-50%);
+    }
+    100% {
+        transform: translateX(0%);
+    }
+}
+
+/* Conteneur principal pour toutes les animations météo */
+.weather-animation-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+/* Version responsive pour les petits écrans */
+@media (max-width: 768px) {
+    .sun-animation-container {
+        top: 5%;
+        right: 10%;
+        width: 200px;
+        height: 200px;
+    }
+
+    .sun-core {
+        width: 70px;
+        height: 70px;
+    }
+
+    .sun-glow {
+        width: 100px;
+        height: 100px;
+    }
+
+    .sun-rays-outer {
+        width: 160px;
+        height: 160px;
+    }
+
+    .sun-ray {
+        width: 130px;
+        height: 4px;
+    }
+
+    .sun-ray-dynamic {
+        width: 40px;
+        height: 3px;
+    }
+
+    .lightning {
+        width: 150px;
+        height: 200px;
+    }
+}

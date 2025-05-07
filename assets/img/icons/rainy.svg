@@ -1,0 +1,29 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0f0f0" />
+      <stop offset="100%" stop-color="#e0e0e0" />
+    </linearGradient>
+    <linearGradient id="rainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#90caf9" />
+      <stop offset="100%" stop-color="#64b5f6" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Cloud -->
+  <path d="M30,60 
+           C20,60 15,53 15,45 
+           C15,35 25,25 40,25 
+           C55,25 70,35 70,50 
+           C70,55 67,60 60,65 
+           C55,68 45,70 40,70 
+           C32,70 28,65 22,65
+           C15,65 10,70 10,60
+           C10,55 20,60 30,60 Z" 
+        fill="url(#cloudGradient)" 
+        filter="drop-shadow(0px 3px 3px rgba(0,0,0,0.12))" />
+  
+  <!-- Rain drops -->
+  <path d="M30,75 L25,95 M50,75 L45,95 M70,75 L65,95 M40,80 L35,100 M60,80 L55,100"
+        stroke="url(#rainGradient)" stroke-width="4" stroke-linecap="round" />
+</svg>
