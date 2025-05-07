@@ -209,7 +209,7 @@ body {
     height: 100%;
     z-index: 1;
     pointer-events: none;
-    background-image: url('assets/img/rain.png');
+    background-image: url('assets/img/rain.svg');
     opacity: 0.4;
     -webkit-animation: rain 0.5s linear infinite;
     animation: rain 0.5s linear infinite;
@@ -242,7 +242,7 @@ body {
     height: 100%;
     z-index: 1;
     pointer-events: none;
-    background-image: url('assets/img/snow.png');
+    background-image: url('assets/img/snow.svg');
     opacity: 0.4;
     -webkit-animation: snow 10s linear infinite;
     animation: snow 10s linear infinite;
