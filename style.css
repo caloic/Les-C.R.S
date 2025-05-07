@@ -25,7 +25,7 @@
 body {
     background-color: #f5f7fa;
     color: var(--color-text-dark);
-    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-family: 'SF Pro Display', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     margin: 0;
     padding: 0;
     min-height: 100vh;
@@ -64,8 +64,8 @@ body {
 
 #locationInput {
     background-color: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border-radius: 30px;
     color: white;
     border: none;
@@ -103,8 +103,8 @@ body {
     max-height: 300px;
     overflow-y: auto;
     background-color: var(--color-card-bg);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border-radius: 0 0 var(--border-radius-small) var(--border-radius-small);
     box-shadow: var(--shadow-soft);
     z-index: 1000;
@@ -211,7 +211,17 @@ body {
     pointer-events: none;
     background-image: url('assets/img/rain.png');
     opacity: 0.4;
+    -webkit-animation: rain 0.5s linear infinite;
     animation: rain 0.5s linear infinite;
+}
+
+@-webkit-keyframes rain {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 0 20px;
+    }
 }
 
 @keyframes rain {
@@ -234,7 +244,17 @@ body {
     pointer-events: none;
     background-image: url('assets/img/snow.png');
     opacity: 0.4;
+    -webkit-animation: snow 10s linear infinite;
     animation: snow 10s linear infinite;
+}
+
+@-webkit-keyframes snow {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 500px 1000px;
+    }
 }
 
 @keyframes snow {
@@ -305,8 +325,8 @@ body {
 /* Cards modernes et épurées */
 .weather-detail-card {
     background-color: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border-radius: var(--border-radius-medium);
     padding: 1.2rem;
     margin-right: 1rem;
@@ -395,11 +415,13 @@ body {
     box-shadow: var(--shadow-card);
     padding: 1.5rem;
     text-align: center;
+    -webkit-transition: transform 0.3s ease;
     transition: transform 0.3s ease;
     position: relative;
 }
 
 .forecast-card:hover {
+    -webkit-transform: translateY(-5px);
     transform: translateY(-5px);
 }
 
@@ -593,6 +615,7 @@ body {
 .footer-links a {
     color: rgba(255, 255, 255, 0.8);
     text-decoration: none;
+    -webkit-transition: color 0.2s ease;
     transition: color 0.2s ease;
 }
 
@@ -614,11 +637,13 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
 }
 
 .social-icon:hover {
     background-color: rgba(255, 255, 255, 0.2);
+    -webkit-transform: translateY(-3px);
     transform: translateY(-3px);
 }
 
@@ -642,8 +667,8 @@ body {
     border: none;
     padding: 1rem;
     margin-bottom: 1rem;
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
 }
 
 .alert-danger {
@@ -652,6 +677,12 @@ body {
 }
 
 /* Animation pour le chargement */
+@-webkit-keyframes pulse {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
 @keyframes pulse {
     0% { opacity: 0.6; }
     50% { opacity: 1; }
@@ -659,6 +690,7 @@ body {
 }
 
 .loading {
+    -webkit-animation: pulse 1.5s infinite;
     animation: pulse 1.5s infinite;
 }
 
@@ -671,6 +703,16 @@ body {
     font-size: 0.8rem;
     display: inline-block;
     font-weight: 600;
+}
+
+/* Fallback pour backdrop-filter */
+@supports not ((-webkit-backdrop-filter: none) or (backdrop-filter: none)) {
+    #locationInput,
+    .autocomplete-container,
+    .weather-detail-card,
+    .alert {
+        background-color: rgba(255, 255, 255, 0.9);
+    }
 }
 
 /* Responsive */
@@ -745,5 +787,27 @@ body {
     .stat-card {
         min-width: 100%;
         margin: 0 0 15px;
+    }
+}
+
+/* Fallbacks pour les propriétés CSS modernes */
+.weather-prediction-card,
+.forecast-card,
+.map-container,
+.card,
+.stat-card,
+.chart-container {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Polyfill pour les navigateurs qui ne supportent pas CSS Grid */
+@supports not (display: grid) {
+    .stats-row {
+        display: block;
+    }
+
+    .stat-card {
+        display: inline-block;
+        width: calc(25% - 20px);
     }
 }
