@@ -3,14 +3,98 @@
 // Inclure la configuration
 require_once 'config.php';
 
+/**
+ * Fonction utilitaire pour valider et nettoyer les données numériques
+ */
+function validateNumeric($value, $default = 0, $min = null, $max = null) {
+    // Convertir en float
+    $num = is_numeric($value) ? floatval($value) : $default;
+
+    // Vérifier si c'est un nombre valide
+    if (!is_finite($num) || is_nan($num)) {
+        return $default;
+    }
+
+    // Appliquer les limites min/max si spécifiées
+    if ($min !== null && $num < $min) $num = $min;
+    if ($max !== null && $num > $max) $num = $max;
+
+    return $num;
+}
+
+/**
+ * Nettoie et valide les données météo reçues de l'API
+ */
+function cleanWeatherData($data) {
+    if (!$data || !is_array($data)) {
+        return null;
+    }
+
+    // Nettoyer les données actuelles
+    if (isset($data['current'])) {
+        $data['current']['temp_c'] = validateNumeric($data['current']['temp_c'] ?? null, 20, -50, 60);
+        $data['current']['humidity'] = validateNumeric($data['current']['humidity'] ?? null, 60, 0, 100);
+        $data['current']['wind_kph'] = validateNumeric($data['current']['wind_kph'] ?? null, 10, 0, 200);
+        $data['current']['pressure_mb'] = validateNumeric($data['current']['pressure_mb'] ?? null, 1013, 800, 1200);
+        $data['current']['vis_km'] = validateNumeric($data['current']['vis_km'] ?? null, 10, 0, 50);
+        $data['current']['uv'] = validateNumeric($data['current']['uv'] ?? null, 3, 0, 12);
+
+        // Vérifier que la condition existe
+        if (!isset($data['current']['condition']['text']) || empty($data['current']['condition']['text'])) {
+            $data['current']['condition']['text'] = 'Temps variable';
+        }
+    }
+
+    // Nettoyer les données de localisation
+    if (isset($data['location'])) {
+        $data['location']['lat'] = validateNumeric($data['location']['lat'] ?? null, 46.603354, -90, 90);
+        $data['location']['lon'] = validateNumeric($data['location']['lon'] ?? null, 1.888334, -180, 180);
+
+        if (!isset($data['location']['name']) || empty($data['location']['name'])) {
+            $data['location']['name'] = 'Ville inconnue';
+        }
+    }
+
+    // Nettoyer les prévisions
+    if (isset($data['forecast']['forecastday']) && is_array($data['forecast']['forecastday'])) {
+        foreach ($data['forecast']['forecastday'] as $index => &$day) {
+            if (isset($day['day'])) {
+                $day['day']['maxtemp_c'] = validateNumeric($day['day']['maxtemp_c'] ?? null, 25, -50, 60);
+                $day['day']['mintemp_c'] = validateNumeric($day['day']['mintemp_c'] ?? null, 15, -50, 60);
+                $day['day']['avgtemp_c'] = validateNumeric($day['day']['avgtemp_c'] ?? null, 20, -50, 60);
+                $day['day']['maxwind_kph'] = validateNumeric($day['day']['maxwind_kph'] ?? null, 15, 0, 200);
+                $day['day']['avghumidity'] = validateNumeric($day['day']['avghumidity'] ?? null, 60, 0, 100);
+
+                // Vérifier la cohérence des températures
+                if ($day['day']['mintemp_c'] > $day['day']['maxtemp_c']) {
+                    $temp = $day['day']['mintemp_c'];
+                    $day['day']['mintemp_c'] = $day['day']['maxtemp_c'];
+                    $day['day']['maxtemp_c'] = $temp;
+                }
+
+                // S'assurer que la température moyenne est entre min et max
+                $day['day']['avgtemp_c'] = max($day['day']['mintemp_c'],
+                    min($day['day']['maxtemp_c'], $day['day']['avgtemp_c']));
+
+                // Vérifier la condition météo
+                if (!isset($day['day']['condition']['text']) || empty($day['day']['condition']['text'])) {
+                    $day['day']['condition']['text'] = 'Temps variable';
+                }
+            }
+        }
+    }
+
+    return $data;
+}
+
 function getWeatherData($location) {
     global $pdo;
 
     try {
         // Rechercher d'abord si la ville existe dans notre base de données
         $stmt = $pdo->prepare("
-            SELECT id, name, latitude, longitude 
-            FROM locations 
+            SELECT id, name, latitude, longitude
+            FROM locations
             WHERE name LIKE :location
             LIMIT 1
         ");
@@ -29,16 +113,13 @@ function getWeatherData($location) {
         $coordinates = $locationData['latitude'] . ',' . $locationData['longitude'];
         $url = "https://api.weatherapi.com/v1/forecast.json?key={$apiKey}&q={$coordinates}&days=7&aqi=no&alerts=no&lang=fr";
 
-        // Déboguer l'URL si nécessaire
-        // error_log("URL API: " . $url);
-
         // Appel à l'API externe avec gestion d'erreur robuste
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_FAILONERROR, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10); // timeout après 10 secondes
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
 
         $response = curl_exec($ch);
         $curlError = curl_error($ch);
@@ -59,6 +140,13 @@ function getWeatherData($location) {
             return getLocalWeatherData($locationData);
         }
 
+        // NOUVEAU : Nettoyer et valider les données reçues
+        $data = cleanWeatherData($data);
+        if (!$data) {
+            error_log("Échec du nettoyage des données météo");
+            return getLocalWeatherData($locationData);
+        }
+
         // Remplacer le nom de la ville par celui de notre base de données pour cohérence
         $data['location']['name'] = $locationData['name'];
 
@@ -69,12 +157,18 @@ function getWeatherData($location) {
             $prediction = makePrediction($locationData['id'], $data['current']['temp_c'], $data['current']['humidity']);
         }
 
-        // Ajouter la prédiction IA aux données de retour
-        $data['prediction'] = [
-            'temperature' => round($prediction['predicted_temperature'], 1),
-            'humidity' => round($prediction['predicted_humidity']),
-            'timestamp' => $prediction['prediction_timestamp'] ?? date('Y-m-d H:i:s')
-        ];
+        // Valider les prédictions IA aussi
+        if ($prediction) {
+            $prediction['predicted_temperature'] = validateNumeric($prediction['predicted_temperature'], 20, -50, 60);
+            $prediction['predicted_humidity'] = validateNumeric($prediction['predicted_humidity'], 60, 0, 100);
+
+            // Ajouter la prédiction IA aux données de retour
+            $data['prediction'] = [
+                'temperature' => round($prediction['predicted_temperature'], 1),
+                'humidity' => round($prediction['predicted_humidity']),
+                'timestamp' => $prediction['prediction_timestamp'] ?? date('Y-m-d H:i:s')
+            ];
+        }
 
         // Sauvegarder les données météo dans la base de données pour référence future
         saveWeatherData($data, $locationData['id']);
@@ -83,7 +177,7 @@ function getWeatherData($location) {
     } catch (Exception $e) {
         error_log("Exception dans getWeatherData: " . $e->getMessage());
         // En cas d'erreur, utiliser les données locales
-        return getLocalWeatherData(['id' => $locationData['id'] ?? null, 'name' => $location, 'latitude' => 0, 'longitude' => 0]);
+        return getLocalWeatherData($locationData ?? ['id' => null, 'name' => $location, 'latitude' => 46.603354, 'longitude' => 1.888334]);
     }
 }
 
@@ -101,8 +195,8 @@ function getLocalWeatherData($location) {
         if (is_string($location)) {
             // Rechercher la localisation par nom
             $stmt = $pdo->prepare("
-                SELECT id, name, latitude, longitude 
-                FROM locations 
+                SELECT id, name, latitude, longitude
+                FROM locations
                 WHERE name LIKE :location
                 LIMIT 1
             ");
@@ -126,32 +220,41 @@ function getLocalWeatherData($location) {
         $weatherData = getWeatherForLocation($locationData['id']);
 
         if (!$weatherData) {
-            // Données minimales si rien n'est trouvé
+            // Données minimales avec validation si rien n'est trouvé
             $weatherData = [
-                'temperature' => 15,
+                'temperature' => 20,
                 'humidity' => 60,
                 'wind_speed' => 10,
                 'weather_condition' => 'Partiellement nuageux'
             ];
+        } else {
+            // Valider les données de la base
+            $weatherData['temperature'] = validateNumeric($weatherData['temperature'], 20, -50, 60);
+            $weatherData['humidity'] = validateNumeric($weatherData['humidity'], 60, 0, 100);
+            $weatherData['wind_speed'] = validateNumeric($weatherData['wind_speed'], 10, 0, 200);
         }
 
         // Récupérer également la prédiction
         $prediction = getPredictionForLocation($locationData['id']);
         if (!$prediction) {
-            // Créer une prédiction si aucune n'existe
+            // Créer une prédiction validée si aucune n'existe
             $prediction = [
-                'predicted_temperature' => $weatherData['temperature'] * 1.05,
-                'predicted_humidity' => min(100, $weatherData['humidity'] * 0.95),
+                'predicted_temperature' => validateNumeric($weatherData['temperature'] * 1.05, 22, -50, 60),
+                'predicted_humidity' => validateNumeric(min(100, $weatherData['humidity'] * 0.95), 57, 0, 100),
                 'prediction_timestamp' => date('Y-m-d H:i:s')
             ];
+        } else {
+            // Valider les prédictions existantes
+            $prediction['predicted_temperature'] = validateNumeric($prediction['predicted_temperature'], 20, -50, 60);
+            $prediction['predicted_humidity'] = validateNumeric($prediction['predicted_humidity'], 60, 0, 100);
         }
 
         // Formater les données pour qu'elles soient compatibles avec le format de l'API
         return [
             'location' => [
-                'name' => $locationData['name'],
-                'lat' => $locationData['latitude'],
-                'lon' => $locationData['longitude'],
+                'name' => $locationData['name'] ?? 'Ville inconnue',
+                'lat' => validateNumeric($locationData['latitude'], 46.603354, -90, 90),
+                'lon' => validateNumeric($locationData['longitude'], 1.888334, -180, 180),
                 'region' => '',
                 'country' => 'France',
                 'localtime' => date('Y-m-d H:i')
@@ -161,12 +264,12 @@ function getLocalWeatherData($location) {
                 'humidity' => $weatherData['humidity'],
                 'wind_kph' => $weatherData['wind_speed'],
                 'condition' => [
-                    'text' => $weatherData['weather_condition'],
-                    'icon' => getWeatherIcon($weatherData['weather_condition'])
+                    'text' => $weatherData['weather_condition'] ?? 'Temps variable',
+                    'icon' => getWeatherIcon($weatherData['weather_condition'] ?? 'Temps variable')
                 ],
-                'pressure_mb' => rand(1000, 1025),
-                'vis_km' => rand(8, 20),
-                'uv' => rand(1, 6),
+                'pressure_mb' => validateNumeric(rand(1000, 1025), 1013, 800, 1200),
+                'vis_km' => validateNumeric(rand(8, 20), 10, 0, 50),
+                'uv' => validateNumeric(rand(1, 6), 3, 0, 12),
                 'last_updated' => date('Y-m-d H:i')
             ],
             'forecast' => [
@@ -206,11 +309,15 @@ function getWeatherIcon($condition) {
 }
 
 /**
- * Génère des prévisions fictives pour les jours suivants
+ * Génère des prévisions fictives pour les jours suivants avec validation
  */
 function generateFakeForecast($baseTemp, $baseHumidity) {
     $forecast = [];
     $conditions = ['Ensoleillé', 'Partiellement nuageux', 'Nuageux', 'Pluie légère', 'Pluie'];
+
+    // Valider les données de base
+    $baseTemp = validateNumeric($baseTemp, 20, -50, 60);
+    $baseHumidity = validateNumeric($baseHumidity, 60, 0, 100);
 
     // Date du jour
     $currentDate = date('Y-m-d');
@@ -223,9 +330,16 @@ function generateFakeForecast($baseTemp, $baseHumidity) {
         $tempVariation = rand(-5, 5);
         $humidityVariation = rand(-15, 15);
 
-        $dayTemp = $baseTemp + $tempVariation;
-        $nightTemp = $dayTemp - rand(3, 8);
-        $humidity = min(95, max(30, $baseHumidity + $humidityVariation));
+        $dayTemp = validateNumeric($baseTemp + $tempVariation, 20, -50, 60);
+        $nightTemp = validateNumeric($dayTemp - rand(3, 8), 15, -50, 60);
+        $humidity = validateNumeric($baseHumidity + $humidityVariation, 60, 0, 100);
+
+        // Assurer la cohérence des températures
+        if ($nightTemp > $dayTemp) {
+            $temp = $nightTemp;
+            $nightTemp = $dayTemp;
+            $dayTemp = $temp;
+        }
 
         // Condition météo aléatoire
         $condition = $conditions[array_rand($conditions)];
@@ -235,8 +349,9 @@ function generateFakeForecast($baseTemp, $baseHumidity) {
             'day' => [
                 'maxtemp_c' => round($dayTemp, 1),
                 'mintemp_c' => round($nightTemp, 1),
+                'avgtemp_c' => round(($dayTemp + $nightTemp) / 2, 1),
                 'avghumidity' => round($humidity),
-                'maxwind_kph' => rand(5, 30),
+                'maxwind_kph' => validateNumeric(rand(5, 30), 15, 0, 200),
                 'condition' => [
                     'text' => $condition,
                     'icon' => getWeatherIcon($condition)
@@ -270,22 +385,22 @@ function saveWeatherData($data, $locationId = null) {
                 $stmt->execute([
                     $locationId,
                     $data['location']['name'],
-                    $data['location']['lat'],
-                    $data['location']['lon']
+                    validateNumeric($data['location']['lat'], 46.603354, -90, 90),
+                    validateNumeric($data['location']['lon'], 1.888334, -180, 180)
                 ]);
             }
         }
 
-        // Enregistrer les données météo actuelles
+        // Enregistrer les données météo actuelles avec validation
         $weatherId = generateUUID();
         $stmt = $pdo->prepare("INSERT INTO weather_data (id, location_id, temperature, humidity, wind_speed, weather_condition) VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $weatherId,
             $locationId,
-            $data['current']['temp_c'],
-            $data['current']['humidity'],
-            $data['current']['wind_kph'],
-            $data['current']['condition']['text']
+            validateNumeric($data['current']['temp_c'], 20, -50, 60),
+            validateNumeric($data['current']['humidity'], 60, 0, 100),
+            validateNumeric($data['current']['wind_kph'], 10, 0, 200),
+            $data['current']['condition']['text'] ?? 'Temps variable'
         ]);
 
         return true;
@@ -314,7 +429,7 @@ function getWeatherForLocation($locationId) {
 
     try {
         $stmt = $pdo->prepare("
-            SELECT l.name, l.latitude, l.longitude, w.temperature, w.humidity, 
+            SELECT l.name, l.latitude, l.longitude, w.temperature, w.humidity,
                    w.wind_speed, w.weather_condition, w.timestamp
             FROM weather_data w
             JOIN locations l ON w.location_id = l.id
@@ -323,7 +438,18 @@ function getWeatherForLocation($locationId) {
             LIMIT 1
         ");
         $stmt->execute([$locationId]);
-        return $stmt->fetch();
+        $result = $stmt->fetch();
+
+        if ($result) {
+            // Valider les données récupérées
+            $result['temperature'] = validateNumeric($result['temperature'], 20, -50, 60);
+            $result['humidity'] = validateNumeric($result['humidity'], 60, 0, 100);
+            $result['wind_speed'] = validateNumeric($result['wind_speed'], 10, 0, 200);
+            $result['latitude'] = validateNumeric($result['latitude'], 46.603354, -90, 90);
+            $result['longitude'] = validateNumeric($result['longitude'], 1.888334, -180, 180);
+        }
+
+        return $result;
     } catch (PDOException $e) {
         error_log('Erreur de récupération des données météo: ' . $e->getMessage());
         return null;
@@ -338,7 +464,15 @@ function getAllLocations() {
 
     try {
         $stmt = $pdo->query("SELECT * FROM locations ORDER BY name LIMIT 1000");
-        return $stmt->fetchAll();
+        $locations = $stmt->fetchAll();
+
+        // Valider les coordonnées de chaque localisation
+        foreach ($locations as &$location) {
+            $location['latitude'] = validateNumeric($location['latitude'], 46.603354, -90, 90);
+            $location['longitude'] = validateNumeric($location['longitude'], 1.888334, -180, 180);
+        }
+
+        return $locations;
     } catch (PDOException $e) {
         error_log('Erreur de récupération des localisations: ' . $e->getMessage());
         return [];
@@ -346,19 +480,26 @@ function getAllLocations() {
 }
 
 /**
- * Crée une prédiction météo simple
+ * Crée une prédiction météo simple avec validation
  */
 function makePrediction($locationId, $currentTemp, $currentHumidity) {
     global $pdo;
 
     try {
+        // Valider les données d'entrée
+        $currentTemp = validateNumeric($currentTemp, 20, -50, 60);
+        $currentHumidity = validateNumeric($currentHumidity, 60, 0, 100);
+
         // Simuler une prédiction (dans un vrai projet, ce serait un modèle ML)
-        $predictedTemp = $currentTemp * (1 + (rand(-5, 5) / 100));
-        $predictedHumidity = min(100, max(0, $currentHumidity * (1 + (rand(-10, 10) / 100))));
+        $tempVariation = (rand(-5, 5) / 100); // ±5%
+        $humidityVariation = (rand(-10, 10) / 100); // ±10%
+
+        $predictedTemp = validateNumeric($currentTemp * (1 + $tempVariation), 20, -50, 60);
+        $predictedHumidity = validateNumeric($currentHumidity * (1 + $humidityVariation), 60, 0, 100);
 
         $predictionId = generateUUID();
         $stmt = $pdo->prepare("
-            INSERT INTO weather_predictions 
+            INSERT INTO weather_predictions
             (id, location_id, predicted_temperature, predicted_humidity, prediction_timestamp)
             VALUES (?, ?, ?, ?, NOW())
         ");
@@ -395,7 +536,15 @@ function getPredictionForLocation($locationId) {
             LIMIT 1
         ");
         $stmt->execute([$locationId]);
-        return $stmt->fetch();
+        $result = $stmt->fetch();
+
+        if ($result) {
+            // Valider les prédictions récupérées
+            $result['predicted_temperature'] = validateNumeric($result['predicted_temperature'], 20, -50, 60);
+            $result['predicted_humidity'] = validateNumeric($result['predicted_humidity'], 60, 0, 100);
+        }
+
+        return $result;
     } catch (PDOException $e) {
         error_log('Erreur de récupération des prédictions: ' . $e->getMessage());
         return null;

@@ -1,3 +1,28 @@
+// Fonction utilitaire pour valider et formater les nombres
+function safeNumber(value, defaultValue = 0) {
+    // Convertir en nombre et vérifier si c'est valide
+    const num = parseFloat(value);
+    return isNaN(num) || !isFinite(num) ? defaultValue : num;
+}
+
+// Fonction utilitaire pour formater la température
+function formatTemperature(temp, showUnit = false) {
+    const safeTemp = safeNumber(temp, 20); // Température par défaut : 20°C
+    return showUnit ? `${Math.round(safeTemp)}°C` : `${Math.round(safeTemp)}°`;
+}
+
+// Fonction utilitaire pour formater la vitesse du vent
+function formatWindSpeed(speed) {
+    const safeSpeed = safeNumber(speed, 10); // Vitesse par défaut : 10 km/h
+    return `${Math.round(safeSpeed)} km/h`;
+}
+
+// Fonction utilitaire pour formater l'humidité
+function formatHumidity(humidity) {
+    const safeHumidity = safeNumber(humidity, 60); // Humidité par défaut : 60%
+    return `${Math.round(safeHumidity)}%`;
+}
+
 // Attendre que le DOM soit chargé
 document.addEventListener('DOMContentLoaded', function() {
     // Éléments du DOM
@@ -135,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Créer un élément HTML pour le marqueur personnalisé
         const markerHtml = `
             <div class="custom-marker" style="background-color: ${markerColor};">
-                <div class="marker-temp">${temp}°</div>
+                <div class="marker-temp">${safeNumber(temp, 20)}°</div>
                 <i class="fas ${iconClass}"></i>
             </div>
         `;
@@ -149,7 +174,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Créer et ajouter le marqueur
         const marker = L.marker([lat, lon], { icon: customIcon }).addTo(map);
-        marker.bindPopup(`<b>${name}</b><br>${temp}°C, ${condition}`);
+        marker.bindPopup(`<b>${name}</b><br>${safeNumber(temp, 20)}°C, ${condition}`);
 
         // Stocker le marqueur
         markers.push(marker);
@@ -565,55 +590,73 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Met à jour l'interface avec les données météo de l'API
+     * Met à jour l'interface avec les données météo de l'API - VERSION CORRIGÉE
      */
     function updateWeatherUI(data) {
-        // Mettre à jour les informations de localisation
-        currentLocation.textContent = data.location.name;
+        try {
+            // Vérifier que les données existent
+            if (!data || !data.location || !data.current) {
+                console.error('Données météo invalides:', data);
+                showAlert('Données météo incomplètes reçues');
+                return;
+            }
 
-        // Format de la date actuelle
-        const now = new Date();
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-        currentDate.textContent = `Update As Of ${hours}:${minutes}`;
+            // Mettre à jour les informations de localisation
+            currentLocation.textContent = data.location.name || 'Ville inconnue';
 
-        // Mettre à jour les données météo actuelles
-        temperature.textContent = Math.round(data.current.temp_c);
+            // Format de la date actuelle
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            currentDate.textContent = `Update As Of ${hours}:${minutes}`;
 
-        const conditionText = data.current.condition.text;
-        weatherCondition.textContent = conditionText;
+            // Mettre à jour les données météo actuelles avec validation
+            const currentTemp = safeNumber(data.current.temp_c, 20);
+            temperature.textContent = Math.round(currentTemp);
 
-        // Mettre à jour le fond en fonction de la condition météo
-        updateWeatherBackground(conditionText);
+            const conditionText = data.current.condition?.text || 'Temps variable';
+            weatherCondition.textContent = conditionText;
 
-        // Mettre à jour l'icône météo
-        if (weatherIconLarge) {
-            const iconUrl = getWeatherIconUrl(conditionText);
-            weatherIconLarge.innerHTML = `<img src="${iconUrl}" alt="${conditionText}" width="120">`;
-        }
+            // Mettre à jour le fond en fonction de la condition météo
+            updateWeatherBackground(conditionText);
 
-        humidity.textContent = `${data.current.humidity}%`;
-        windSpeed.textContent = `${Math.round(data.current.wind_kph)} km/h`;
-        pressure.textContent = data.current.pressure_mb;
-        visibility.textContent = `${data.current.vis_km} km`;
+            // Mettre à jour l'icône météo
+            if (weatherIconLarge) {
+                const iconUrl = getWeatherIconUrl(conditionText);
+                weatherIconLarge.innerHTML = `<img src="${iconUrl}" alt="${conditionText}" width="120">`;
+            }
 
-        // Mettre à jour la carte
-        if (map) {
-            updateMap(data.location.lat, data.location.lon, data.location.name, data.current.temp_c, data.current.condition.text);
-        }
+            // Mettre à jour les détails météo avec validation
+            humidity.textContent = formatHumidity(data.current.humidity);
+            windSpeed.textContent = formatWindSpeed(data.current.wind_kph);
+            pressure.textContent = safeNumber(data.current.pressure_mb, 1013);
+            visibility.textContent = `${safeNumber(data.current.vis_km, 10)} km`;
 
-        // Mettre à jour les prévisions
-        if (data.forecast && data.forecast.forecastday) {
-            updateForecast(data.forecast.forecastday, conditionText);
-        }
+            // Mettre à jour la carte
+            if (map && data.location.lat && data.location.lon) {
+                updateMap(data.location.lat, data.location.lon, data.location.name, currentTemp, conditionText);
+            }
 
-        // Mettre à jour les prédictions IA
-        if (data.prediction) {
-            aiTemperature.textContent = `${data.prediction.temperature}°C`;
-            aiHumidity.textContent = `${data.prediction.humidity}%`;
-        } else {
-            // Simuler une prédiction si non disponible
-            updatePredictions(data.current.temp_c, data.current.humidity);
+            // Mettre à jour les prévisions avec validation
+            if (data.forecast && data.forecast.forecastday) {
+                updateForecast(data.forecast.forecastday, conditionText);
+            } else {
+                console.warn('Aucune prévision disponible dans les données');
+                createDefaultForecast(currentTemp, conditionText);
+            }
+
+            // Mettre à jour les prédictions IA
+            if (data.prediction) {
+                aiTemperature.textContent = formatTemperature(data.prediction.temperature, true);
+                aiHumidity.textContent = formatHumidity(data.prediction.humidity);
+            } else {
+                // Simuler une prédiction si non disponible
+                updatePredictions(currentTemp, safeNumber(data.current.humidity, 60));
+            }
+
+        } catch (error) {
+            console.error('Erreur dans updateWeatherUI:', error);
+            showAlert('Erreur lors de la mise à jour de l\'interface');
         }
     }
 
@@ -623,8 +666,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateMap(lat, lon, name, temp, condition) {
         if (!map) return;
 
+        // Valider les coordonnées
+        const safeLat = safeNumber(lat, 46.603354);
+        const safeLon = safeNumber(lon, 1.888334);
+        const safeTemp = safeNumber(temp, 20);
+
         // Centrer la carte sur la nouvelle position
-        map.setView([lat, lon], 10);
+        map.setView([safeLat, safeLon], 10);
 
         // Supprimer le marqueur actuel s'il existe
         if (currentMarker) {
@@ -658,7 +706,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Créer un élément HTML pour le marqueur personnalisé
         const markerHtml = `
             <div class="custom-marker highlight-marker" style="background-color: ${markerColor};">
-                <div class="marker-temp">${Math.round(temp)}°</div>
+                <div class="marker-temp">${Math.round(safeTemp)}°</div>
                 <i class="fas ${iconClass}"></i>
             </div>
         `;
@@ -671,100 +719,170 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Ajouter le nouveau marqueur
-        currentMarker = L.marker([lat, lon], { icon: customIcon }).addTo(map);
-        currentMarker.bindPopup(`<b>${name}</b><br>${Math.round(temp)}°C, ${condition}`).openPopup();
+        currentMarker = L.marker([safeLat, safeLon], { icon: customIcon }).addTo(map);
+        currentMarker.bindPopup(`<b>${name}</b><br>${Math.round(safeTemp)}°C, ${condition}`).openPopup();
     }
 
     /**
-     * Met à jour les prévisions météo
+     * Met à jour les prévisions météo - VERSION CORRIGÉE
      */
     function updateForecast(forecastDays, currentCondition) {
-        // Vérifier si le conteneur existe
-        if (!forecastContainer) return;
+        try {
+            // Vérifier si le conteneur existe
+            if (!forecastContainer) {
+                console.error('Conteneur de prévisions non trouvé');
+                return;
+            }
 
-        // Vider le conteneur
-        forecastContainer.innerHTML = '';
+            // Vider le conteneur
+            forecastContainer.innerHTML = '';
 
-        // Créer une première carte active
-        const firstDay = forecastDays[0];
-        const date = new Date();
-        const joursSemaine = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-        const jourSemaine = joursSemaine[date.getDay()];
+            // Vérifier qu'on a des données de prévision
+            if (!forecastDays || forecastDays.length === 0) {
+                console.warn('Aucune donnée de prévision disponible');
+                createDefaultForecast(20, currentCondition);
+                return;
+            }
 
-        const activeCard = document.createElement('div');
-        activeCard.className = 'forecast-card active';
+            // Créer une première carte active
+            const firstDay = forecastDays[0];
+            if (!firstDay || !firstDay.day) {
+                console.warn('Données du premier jour invalides');
+                createDefaultForecast(20, currentCondition);
+                return;
+            }
 
-        // Obtenir l'icône correcte pour la condition météo actuelle
-        const currentIconUrl = getWeatherIconUrl(currentCondition);
-
-        activeCard.innerHTML = `
-            <div class="forecast-time">
-                <span class="forecast-day">${jourSemaine}</span>
-                <span class="forecast-hour">4:00PM</span>
-            </div>
-            <div class="forecast-icon">
-                <img src="${currentIconUrl}" alt="${currentCondition}" width="64">
-            </div>
-            <div class="forecast-temp">${Math.round(firstDay.day.avgtemp_c)}°</div>
-            <div class="forecast-high-low">${Math.round(firstDay.day.maxtemp_c)}°</div>
-            <div class="forecast-detail">
-                <span><i class="fas fa-wind"></i>${Math.round(firstDay.day.maxwind_kph)} km/h</span>
-                <span><i class="fas fa-tint"></i>${Math.round(firstDay.day.avghumidity)}%</span>
-            </div>
-        `;
-        forecastContainer.appendChild(activeCard);
-
-        // Ajouter des cartes pour les heures suivantes
-        const hours = ["5:00PM", "6:00PM", "7:00PM", "8:00PM"];
-
-        // N'afficher que quelques prévisions
-        forecastDays.slice(0, 4).forEach((day, index) => {
             const date = new Date();
-            date.setDate(date.getDate() + (index > 0 ? 1 : 0));
+            const joursSemaine = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
             const jourSemaine = joursSemaine[date.getDay()];
-            const hour = hours[index % hours.length];
 
-            // Obtenir l'icône correcte pour cette prévision
-            const forecastIconUrl = getWeatherIconUrl(day.day.condition.text);
+            const activeCard = document.createElement('div');
+            activeCard.className = 'forecast-card active';
 
-            const forecastCard = document.createElement('div');
-            forecastCard.className = 'forecast-card';
-            forecastCard.innerHTML = `
+            // Obtenir l'icône correcte pour la condition météo actuelle
+            const currentIconUrl = getWeatherIconUrl(currentCondition);
+
+            // Valider les températures avec des valeurs par défaut
+            const avgTemp = safeNumber(firstDay.day.avgtemp_c, 20);
+            const maxTemp = safeNumber(firstDay.day.maxtemp_c, 25);
+            const maxWind = safeNumber(firstDay.day.maxwind_kph, 15);
+            const avgHumidity = safeNumber(firstDay.day.avghumidity, 60);
+
+            activeCard.innerHTML = `
                 <div class="forecast-time">
                     <span class="forecast-day">${jourSemaine}</span>
-                    <span class="forecast-hour">${hour}</span>
+                    <span class="forecast-hour">4:00PM</span>
                 </div>
                 <div class="forecast-icon">
-                    <img src="${forecastIconUrl}" alt="${day.day.condition.text}" width="64">
+                    <img src="${currentIconUrl}" alt="${currentCondition}" width="64">
                 </div>
-                <div class="forecast-temp">${Math.round(day.day.avgtemp_c)}°</div>
-                <div class="forecast-high-low">${Math.round(day.day.maxtemp_c)}°</div>
+                <div class="forecast-temp">${Math.round(avgTemp)}°</div>
+                <div class="forecast-high-low">${Math.round(maxTemp)}°</div>
                 <div class="forecast-detail">
-                    <span><i class="fas fa-wind"></i>${Math.round(day.day.maxwind_kph)} km/h</span>
-                    <span><i class="fas fa-tint"></i>${Math.round(day.day.avghumidity)}%</span>
+                    <span><i class="fas fa-wind"></i>${Math.round(maxWind)} km/h</span>
+                    <span><i class="fas fa-tint"></i>${Math.round(avgHumidity)}%</span>
                 </div>
             `;
+            forecastContainer.appendChild(activeCard);
 
-            // Ajouter l'événement de clic
-            forecastCard.addEventListener('click', function() {
-                document.querySelectorAll('.forecast-card').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
+            // Ajouter des cartes pour les heures suivantes
+            const hours = ["5:00PM", "6:00PM", "7:00PM", "8:00PM"];
+
+            // N'afficher que quelques prévisions valides
+            const validForecastDays = forecastDays.slice(0, 4).filter(day => day && day.day);
+
+            validForecastDays.forEach((day, index) => {
+                const date = new Date();
+                date.setDate(date.getDate() + (index > 0 ? 1 : 0));
+                const jourSemaine = joursSemaine[date.getDay()];
+                const hour = hours[index % hours.length];
+
+                // Valider toutes les données avec des valeurs par défaut
+                const avgTemp = safeNumber(day.day.avgtemp_c, 20);
+                const maxTemp = safeNumber(day.day.maxtemp_c, 25);
+                const maxWind = safeNumber(day.day.maxwind_kph, 15);
+                const avgHumidity = safeNumber(day.day.avghumidity, 60);
+                const conditionText = day.day.condition?.text || 'Temps variable';
+
+                // Obtenir l'icône correcte pour cette prévision
+                const forecastIconUrl = getWeatherIconUrl(conditionText);
+
+                const forecastCard = document.createElement('div');
+                forecastCard.className = 'forecast-card';
+                forecastCard.innerHTML = `
+                    <div class="forecast-time">
+                        <span class="forecast-day">${jourSemaine}</span>
+                        <span class="forecast-hour">${hour}</span>
+                    </div>
+                    <div class="forecast-icon">
+                        <img src="${forecastIconUrl}" alt="${conditionText}" width="64">
+                    </div>
+                    <div class="forecast-temp">${Math.round(avgTemp)}°</div>
+                    <div class="forecast-high-low">${Math.round(maxTemp)}°</div>
+                    <div class="forecast-detail">
+                        <span><i class="fas fa-wind"></i>${Math.round(maxWind)} km/h</span>
+                        <span><i class="fas fa-tint"></i>${Math.round(avgHumidity)}%</span>
+                    </div>
+                `;
+
+                // Ajouter l'événement de clic
+                forecastCard.addEventListener('click', function() {
+                    document.querySelectorAll('.forecast-card').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                });
+
+                forecastContainer.appendChild(forecastCard);
             });
 
-            forecastContainer.appendChild(forecastCard);
-        });
+        } catch (error) {
+            console.error('Erreur dans updateForecast:', error);
+            createDefaultForecast(20, currentCondition);
+        }
     }
 
     /**
-     * Met à jour les prédictions IA
+     * Crée des prévisions par défaut en cas d'erreur
+     */
+    function createDefaultForecast(baseTemp, condition) {
+        if (!forecastContainer) return;
+
+        forecastContainer.innerHTML = '';
+
+        const defaultMessage = document.createElement('div');
+        defaultMessage.className = 'text-center py-4 w-100';
+        defaultMessage.innerHTML = `
+            <p>Prévisions temporairement indisponibles</p>
+            <small>Température actuelle: ${formatTemperature(baseTemp, true)}</small>
+        `;
+
+        forecastContainer.appendChild(defaultMessage);
+    }
+
+    /**
+     * Met à jour les prédictions IA - VERSION CORRIGÉE
      */
     function updatePredictions(currentTemp, currentHumidity) {
-        // Simuler une légère variation basée sur les conditions actuelles
-        const predictedTemp = Math.round((currentTemp * (1 + (Math.random() * 0.1 - 0.05))) * 10) / 10;
-        const predictedHumidity = Math.min(100, Math.max(0, Math.round(currentHumidity * (1 + (Math.random() * 0.15 - 0.05)))));
+        try {
+            // Valider les données d'entrée
+            const validTemp = safeNumber(currentTemp, 20);
+            const validHumidity = safeNumber(currentHumidity, 60);
 
-        if (aiTemperature) aiTemperature.textContent = `${predictedTemp}°C`;
-        if (aiHumidity) aiHumidity.textContent = `${predictedHumidity}%`;
+            // Simuler une légère variation basée sur les conditions actuelles
+            const tempVariation = (Math.random() * 0.1 - 0.05); // ±5%
+            const humidityVariation = (Math.random() * 0.15 - 0.075); // ±7.5%
+
+            const predictedTemp = validTemp * (1 + tempVariation);
+            const predictedHumidity = Math.min(100, Math.max(0, validHumidity * (1 + humidityVariation)));
+
+            if (aiTemperature) aiTemperature.textContent = formatTemperature(predictedTemp, true);
+            if (aiHumidity) aiHumidity.textContent = formatHumidity(predictedHumidity);
+
+        } catch (error) {
+            console.error('Erreur dans updatePredictions:', error);
+            // Valeurs par défaut en cas d'erreur
+            if (aiTemperature) aiTemperature.textContent = '22°C';
+            if (aiHumidity) aiHumidity.textContent = '65%';
+        }
     }
 
     /**
