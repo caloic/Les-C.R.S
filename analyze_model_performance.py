@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Script d'analyse et de visualisation des performances du modèle ML
-Génère des graphiques et des statistiques pour la présentation
-"""
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt

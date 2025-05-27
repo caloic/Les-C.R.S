@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-Script d'entraînement du modèle de prédiction météorologique
-Utilise les données du fichier CSV pour entraîner un modèle de machine learning
-capable de prédire la température et l'humidité futures.
-"""
-
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, cross_val_score

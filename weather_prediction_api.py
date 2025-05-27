@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-API Flask pour servir les prédictions météorologiques
-Cette API charge les modèles entraînés et fournit des endpoints pour obtenir des prédictions
-"""
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import joblib

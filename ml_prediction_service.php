@@ -1,7 +1,4 @@
 <?php
-/**
- * Service pour obtenir des prédictions ML depuis l'API Python
- */
 
 class MLPredictionService {
     private $api_url;

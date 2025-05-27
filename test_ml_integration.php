@@ -1,8 +1,4 @@
 <?php
-/**
- * Script de test pour vérifier que le ML fonctionne avec votre site
- * Placez ce fichier dans votre dossier de projet et accédez-y via http://localhost:8888/Les-C.R.S/test_ml_integration.php
- */
 
 // Inclure les dépendances
 require_once 'config.php';

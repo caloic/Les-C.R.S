@@ -1,8 +1,4 @@
 <?php
-/**
- * Script d'importation du fichier meteo-0025(no filtrer).csv
- * Version adaptée pour le nouveau format de données météorologiques
- */
 
 // Inclure la configuration
 require_once 'config.php';
