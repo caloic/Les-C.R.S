@@ -128,6 +128,18 @@ $weatherData = getWeatherData($defaultCity);
             <div class="col-lg-4 mt-4 mt-lg-0">
                 <!-- Carte de prévision IA -->
                 <div class="weather-prediction-card">
+                    <div class="text-center mt-3">
+                        <?php
+                        // Vérifier si le ML est actif
+                        require_once 'ml_prediction_service.php';
+                        $mlService = new MLPredictionService('http://localhost:5000');
+                        if ($mlService->isAvailable()) {
+                        echo '<span class="badge bg-success"><i class="fas fa-brain me-1"></i> ML Actif</span>';
+                        } else {
+                        echo '<span class="badge bg-warning text-dark"><i class="fas fa-chart-line me-1"></i> Mode Simulation</span>';
+                        }
+                        ?>
+                    </div>
                     <div class="weather-icon-large">
                         <?php
                         $condition = isset($weatherData['current']) ? strtolower($weatherData['current']['condition']['text']) : '';

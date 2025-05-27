@@ -2,6 +2,7 @@
 
 // Inclure la configuration
 require_once 'config.php';
+require_once 'ml_prediction_service.php';
 
 /**
  * Fonction utilitaire pour valider et nettoyer les données numériques
@@ -486,9 +487,49 @@ function makePrediction($locationId, $currentTemp, $currentHumidity) {
     global $pdo;
 
     try {
-        // Valider les données d'entrée
-        $currentTemp = validateNumeric($currentTemp, 20, -50, 60);
-        $currentHumidity = validateNumeric($currentHumidity, 60, 0, 100);
+        // Essayer d'utiliser le ML si disponible
+        $mlService = new MLPredictionService('http://localhost:5000');
+
+        if ($mlService->isAvailable()) {
+            // Préparer les données pour le ML
+            $weatherData = [
+                'temperature' => $currentTemp,
+                'humidity' => $currentHumidity,
+                'wind_speed' => 10,  // Valeur par défaut
+                'precipitation' => 0
+            ];
+
+            // Obtenir la prédiction ML
+            $mlPrediction = $mlService->getPrediction($weatherData);
+
+            if ($mlPrediction) {
+                // Sauvegarder en base de données
+                $predictionId = generateUUID();
+                $stmt = $pdo->prepare("
+                    INSERT INTO weather_predictions
+                    (id, location_id, predicted_temperature, predicted_humidity, prediction_timestamp)
+                    VALUES (?, ?, ?, ?, NOW())
+                ");
+                $stmt->execute([
+                    $predictionId,
+                    $locationId,
+                    $mlPrediction['predicted_temperature'],
+                    $mlPrediction['predicted_humidity']
+                ]);
+
+                error_log("✅ Prédiction ML utilisée pour location $locationId");
+
+                return [
+                    'predicted_temperature' => $mlPrediction['predicted_temperature'],
+                    'predicted_humidity' => $mlPrediction['predicted_humidity'],
+                    'prediction_timestamp' => date('Y-m-d H:i:s'),
+                    'source' => 'Machine Learning'
+                ];
+            }
+        }
+
+        // FALLBACK: Si ML non disponible, utiliser l'ancienne méthode
+        error_log("⚠️ ML non disponible, utilisation du fallback");
 
         // Simuler une prédiction (dans un vrai projet, ce serait un modèle ML)
         $tempVariation = (rand(-5, 5) / 100); // ±5%
@@ -513,7 +554,8 @@ function makePrediction($locationId, $currentTemp, $currentHumidity) {
         return [
             'predicted_temperature' => $predictedTemp,
             'predicted_humidity' => $predictedHumidity,
-            'prediction_timestamp' => date('Y-m-d H:i:s')
+            'prediction_timestamp' => date('Y-m-d H:i:s'),
+            'source' => 'Simulation'
         ];
     } catch (PDOException $e) {
         error_log('Erreur de création de prédiction: ' . $e->getMessage());
