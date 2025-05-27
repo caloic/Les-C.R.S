@@ -1,0 +1,43 @@
+{
+  "feature_columns": [
+    "2 metre temperature",
+    "2 metre relative humidity",
+    "10m wind speed",
+    "Total precipitation",
+    "hour",
+    "day_of_week",
+    "2 metre temperature_lag_1h",
+    "2 metre temperature_lag_3h",
+    "2 metre temperature_lag_6h",
+    "2 metre temperature_ma_6h",
+    "2 metre temperature_ma_24h",
+    "2 metre relative humidity_lag_1h",
+    "2 metre relative humidity_lag_3h",
+    "2 metre relative humidity_lag_6h",
+    "2 metre relative humidity_ma_6h",
+    "2 metre relative humidity_ma_24h",
+    "10m wind speed_lag_1h",
+    "10m wind speed_lag_3h",
+    "10m wind speed_lag_6h",
+    "10m wind speed_ma_6h",
+    "10m wind speed_ma_24h",
+    "Total precipitation_lag_1h",
+    "Total precipitation_lag_3h",
+    "Total precipitation_lag_6h",
+    "Total precipitation_ma_6h",
+    "Total precipitation_ma_24h"
+  ],
+  "metrics": {
+    "temperature": {
+      "mae": 1.1154040562563434,
+      "r2": 0.2883271485014649
+    },
+    "humidity": {
+      "mae": 3.8965385989535117,
+      "r2": 0.14316413633901182
+    }
+  },
+  "training_date": "2025-05-27T17:35:50.474543",
+  "model_type": "RandomForestRegressor",
+  "prediction_horizon": "3 hours"
+}
